@@ -30,7 +30,7 @@ spec:
       namespace: kube-system
     spec:
       nodeSelector:
-        node-role.kubernetes.io/control-plane: "true"
+        node-role.kubernetes.io/control-plane: ""
       tolerations:
         - key: "node-role.kubernetes.io/control-plane"
           operator: "Exists"
