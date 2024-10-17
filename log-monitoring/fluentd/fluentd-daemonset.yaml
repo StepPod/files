@@ -5,14 +5,6 @@ metadata:
   namespace: kube-system
 data:
   fluent.conf: |
-    # do not collect fluentd logs to avoid infinite loops.
-    <label @FLUENT_LOG>
-      <match **>
-       @type null
-       @id ignore_fluent_logs
-      </match>
-    </label>
-        
     # Kubernetes Pod 로그 수집
     <source>
       @type tail
@@ -20,25 +12,9 @@ data:
       pos_file /var/log/fluentd-pods.log.pos
       tag kubernetes.pod
       format json
+      encoding utf-8
     </source>
     
-    # 시스템 로그 수집 (dmesg, journal)
-    #<source>
-    #  @type systemd
-    #  matches [{ "_SYSTEMD_UNIT": "dmesg.service" }, { "_SYSTEMD_UNIT": "systemd-journald.service" }]
-    #  tag system.logs
-    #  path /run/log/journal
-    #</source>
-
-    # steppod 서비스 로그 수집 
-    #<source>
-    #  @type tail
-    #  path /var/log/steppod.log  # steppod 서비스 로그 경로
-    #  pos_file /var/log/fluentd-service.log.pos
-    #  tag steppod.logs
-    #  format none
-    #</source>
-
     # Elasticsearch로 로그 전송
     <match **>
       @type elasticsearch
