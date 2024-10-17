@@ -140,6 +140,9 @@ spec:
             - name: varlibpods
               mountPath: /var/log/pods  # containerd Pod 로그 경로
               readOnly: true
+            - name: varlibcontainers
+              mountPath: /var/log/containers  # container 로그 경로
+              readOnly: true
             - name: runlogjournal
               mountPath: /run/log/journal
               readOnly: true
@@ -154,6 +157,9 @@ spec:
         - name: varlibpods
           hostPath:
             path: /var/log/pods  # containerd Pod 로그 경로
+        - name: varlibcontainers
+          hostPath:
+            path: /var/log/containers  # containerd Pod 로그 경로
         - name: runlogjournal
           hostPath:
             path: /run/log/journal
