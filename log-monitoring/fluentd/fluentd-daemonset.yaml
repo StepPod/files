@@ -22,7 +22,7 @@ data:
       path /run/log/journal
     </source>
 
-    # steppod 서비스 로그 수집
+    # steppod 서비스 로그 수집 
     <source>
       @type tail
       path /var/log/steppod.log  # steppod 서비스 로그 경로
