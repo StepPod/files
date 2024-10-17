@@ -17,6 +17,7 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: elasticsearch
+  namespace: kube-system
   labels:
     app: elasticsearch
 spec:
@@ -29,7 +30,6 @@ spec:
     metadata:
       labels:
         app: elasticsearch
-      namespace: kube-system
     spec:
       nodeSelector:
         node-role.kubernetes.io/control-plane: ""
