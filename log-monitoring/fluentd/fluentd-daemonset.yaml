@@ -78,7 +78,7 @@ spec:
                 fieldRef:
                   fieldPath: spec.nodeName
             - name: FLUENT_ELASTICSEARCH_HOST  # Elasticsearch 호스트 설정
-              value: "your-elasticsearch-host"
+              value: "elasticsearch"
             - name: FLUENT_ELASTICSEARCH_PORT  # Elasticsearch 포트 설정
               value: "9200"
             - name: FLUENT_ELASTICSEARCH_SCHEME

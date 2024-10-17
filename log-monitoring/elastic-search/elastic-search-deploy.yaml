@@ -79,7 +79,7 @@ spec:
             - name: discovery.type
               value: single-node
             - name: bootstrap.memory_lock
-              value: "true"
+              value: "false"  # 기존 true에서 false로 변경
             - name: xpack.security.enabled
               value: "false"
             - name: xpack.security.http.ssl.enabled
@@ -88,6 +88,16 @@ spec:
               value: "false"
             - name: xpack.license.self_generated.type
               value: basic
+            - name: ELASTIC_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: elasticsearch-secret
+                  key: username
+            - name: ELASTIC_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: elasticsearch-secret
+                  key: password
           resources:
             limits:
               cpu: "2"
