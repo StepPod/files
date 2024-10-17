@@ -1,0 +1,145 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fluentd-config
+  namespace: kube-system
+data:
+  fluent.conf: |
+    # Kubernetes Pod 로그 수집
+    <source>
+      @type tail
+      path /var/log/pods/**/*.log  # Kubernetes Pod 로그 경로
+      pos_file /var/log/fluentd-pods.log.pos
+      tag kubernetes.pod
+      format json
+    </source>
+    
+    # 시스템 로그 수집 (dmesg, journal)
+    <source>
+      @type systemd
+      filters [{ "_SYSTEMD_UNIT": "dmesg.service" }, { "_SYSTEMD_UNIT": "systemd-journald.service" }]
+      tag system.logs
+      path /run/log/journal
+    </source>
+
+    # steppod 서비스 로그 수집
+    <source>
+      @type tail
+      path /var/log/steppod.log  # steppod 서비스 로그 경로
+      pos_file /var/log/fluentd-service.log.pos
+      tag steppod.logs
+      format none
+    </source>
+
+    # Elasticsearch로 로그 전송
+    <match **>
+      @type elasticsearch
+      host ${FLUENT_ELASTICSEARCH_HOST}  # Elasticsearch 주소 (환경 변수 사용)
+      port ${FLUENT_ELASTICSEARCH_PORT}
+      logstash_format true
+      logstash_prefix fluentd
+      logstash_dateformat %Y.%m.%d
+      include_tag_key true
+      type_name _doc
+    </match>
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: fluentd
+  namespace: kube-system
+  labels:
+    k8s-app: fluentd-logging
+    version: v1
+spec:
+  selector:
+    matchLabels:
+      k8s-app: fluentd-logging
+      version: v1
+  template:
+    metadata:
+      labels:
+        k8s-app: fluentd-logging
+        version: v1
+    spec:
+      securityContext:
+        runAsUser: 0
+      tolerations:
+        - key: node-role.kubernetes.io/control-plane
+          effect: NoSchedule
+        - key: node-role.kubernetes.io/master
+          effect: NoSchedule
+      containers:
+        - name: fluentd
+          image: fluent/fluentd-kubernetes-daemonset:v1-debian-elasticsearch
+          env:
+            - name: K8S_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: FLUENT_ELASTICSEARCH_HOST  # Elasticsearch 호스트 설정
+              value: "your-elasticsearch-host"
+            - name: FLUENT_ELASTICSEARCH_PORT  # Elasticsearch 포트 설정
+              value: "9200"
+            - name: FLUENT_ELASTICSEARCH_SCHEME
+              value: "http"
+            # Option to configure elasticsearch plugin with self signed certs
+            # ================================================================
+            #- name: FLUENT_ELASTICSEARCH_SSL_VERIFY
+            #  value: "true"
+            # Option to configure elasticsearch plugin with tls
+            # ================================================================
+            #- name: FLUENT_ELASTICSEARCH_SSL_VERSION
+            #  value: "TLSv1_2"
+            # X-Pack Authentication
+            # =====================
+            - name: FLUENT_ELASTICSEARCH_USER
+              valueFrom:
+                secretKeyRef:
+                  name: elasticsearch-secret
+                  key: username
+            - name: FLUENT_ELASTICSEARCH_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: elasticsearch-secret
+                  key: password
+            # Logz.io Authentication
+            # ======================
+            #- name: LOGZIO_TOKEN
+            #  value: "ThisIsASuperLongToken"
+            #- name: LOGZIO_LOGTYPE
+            #  value: "kubernetes"
+          resources:
+            limits:
+              memory: 200Mi
+              cpu: 100m
+            requests:
+              memory: 200Mi
+              cpu: 100m
+          volumeMounts:
+            - name: config-volume
+              mountPath: /fluentd/etc/fluent.conf  # Fluentd 설정 파일 마운트
+              subPath: fluent.conf
+            - name: varlog
+              mountPath: /var/log  # 시스템 로그 경로
+            - name: varlibpods
+              mountPath: /var/log/pods  # containerd Pod 로그 경로
+              readOnly: true
+            - name: runlogjournal
+              mountPath: /run/log/journal
+              readOnly: true
+      terminationGracePeriodSeconds: 30
+      volumes:
+        - name: config-volume
+          configMap:
+            name: fluentd-config  # ConfigMap에서 Fluentd 설정 파일 참조
+        - name: varlog
+          hostPath:
+            path: /var/log  # 시스템 로그 경로
+        - name: varlibpods
+          hostPath:
+            path: /var/log/pods  # containerd Pod 로그 경로
+        - name: runlogjournal
+          hostPath:
+            path: /run/log/journal
+            type: DirectoryOrCreate
