@@ -115,7 +115,7 @@ spec:
             periodSeconds: 10
   volumeClaimTemplates:
     - metadata:
-        name: elasticsearch-data
+        name: elasticsearch-pvc
       spec:
         accessModes: ["ReadWriteOnce"]
         resources:
