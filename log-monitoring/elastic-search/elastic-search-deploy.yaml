@@ -4,10 +4,10 @@ metadata:
   name: elasticsearch-pv
 spec:
   capacity:
-    storage: 10Gi  # 스토리지 용량
+    storage: 10Gi
   accessModes:
     - ReadWriteOnce
-  persistentVolumeReclaimPolicy: Retain  # PV 삭제 시 데이터를 유지할지 설정
+  persistentVolumeReclaimPolicy: Retain
   storageClassName: standard
   hostPath:
     path: /data/elasticsearch  # 호스트 파일 시스템 경로
@@ -22,7 +22,7 @@ spec:
     - ReadWriteOnce
   resources:
     requests:
-      storage: 10Gi  # PVC가 요청하는 스토리지 용량
+      storage: 10Gi
   storageClassName: standard
 ---
 apiVersion: v1
@@ -99,7 +99,7 @@ spec:
             - containerPort: 9300
               name: transport
           volumeMounts:
-            - name: elasticsearch-data
+            - name: elasticsearch-storage
               mountPath: /usr/share/elasticsearch/data
           readinessProbe:
             httpGet:
@@ -113,12 +113,7 @@ spec:
               port: 9200
             initialDelaySeconds: 60
             periodSeconds: 10
-  volumeClaimTemplates:
-    - metadata:
-        name: elasticsearch-pvc
-      spec:
-        accessModes: ["ReadWriteOnce"]
-        resources:
-          requests:
-            storage: 10Gi
-        storageClassName: manual  # PVC에 연결된 스토리지 클래스 지정
+      volumes:
+        - name: elasticsearch-storage
+          persistentVolumeClaim:
+            claimName: elasticsearch-pvc  # 이미 생성된 PVC 참조
