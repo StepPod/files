@@ -5,6 +5,14 @@ metadata:
   namespace: kube-system
 data:
   fluent.conf: |
+    # do not collect fluentd logs to avoid infinite loops.
+    <label @FLUENT_LOG>
+      <match **>
+       @type null
+       @id ignore_fluent_logs
+      </match>
+    </label>
+        
     # Kubernetes Pod 로그 수집
     <source>
       @type tail
@@ -34,8 +42,10 @@ data:
     # Elasticsearch로 로그 전송
     <match **>
       @type elasticsearch
-      host ${FLUENT_ELASTICSEARCH_HOST}  # Elasticsearch 주소 (환경 변수 사용)
-      port ${FLUENT_ELASTICSEARCH_PORT}
+      host elasticsearch-service.kube-system.svc.cluster.local  # Elasticsearch 주소 (환경 변수 사용)
+      port 9200
+      user steppod
+      password steppod123
       logstash_format true
       logstash_prefix fluentd
       logstash_dateformat %Y.%m.%d
@@ -78,7 +88,7 @@ spec:
                 fieldRef:
                   fieldPath: spec.nodeName
             - name: FLUENT_ELASTICSEARCH_HOST  # Elasticsearch 호스트 설정
-              value: "elasticsearch-service"
+              value: "elasticsearch-0.elasticsearch-service.kube-system.svc.cluster.local"
             - name: FLUENT_ELASTICSEARCH_PORT  # Elasticsearch 포트 설정
               value: "9200"
             - name: FLUENT_ELASTICSEARCH_SCHEME
