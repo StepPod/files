@@ -28,7 +28,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: elasticsearch
+  name: elasticsearch-service
   namespace: kube-system
   labels:
     app: elasticsearch
@@ -90,8 +90,10 @@ spec:
               value: basic
           resources:
             limits:
-              memory: "1Gi"
+              cpu: "2"
+              memory: "4Gi"
             requests:
+              cpu: "500m"
               memory: "1Gi"
           ports:
             - containerPort: 9200
@@ -117,3 +119,29 @@ spec:
         - name: elasticsearch-storage
           persistentVolumeClaim:
             claimName: elasticsearch-pvc  # 이미 생성된 PVC 참조
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: elasticsearch-ingressroute
+  namespace: kube-system
+spec:
+  entryPoints:
+    - web  # HTTP 접속을 위한 entryPoint (HTTP일 경우)
+    # - websecure  # HTTPS 접속을 위한 entryPoint (HTTPS일 경우)
+  routes:
+    - match: Host(`elasticsearch.example.com`)  # 접속할 도메인
+      kind: Rule
+      services:
+        - name: elasticsearch-service  # Elasticsearch 서비스 이름
+          port: 9200  # Elasticsearch HTTP 포트
+---
+#apiVersion: traefik.io/v1alpha1
+#kind: Middleware
+#metadata:
+#  name: elasticsearch-redirect
+#  namespace: default
+#spec:
+#  redirectScheme:
+#    scheme: https  # HTTP 요청을 HTTPS로 리다이렉트 (HTTPS 사용 시 필요)
+#    permanent: true

@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: kibana
+  name: kibana-service
   labels:
     app: kibana
 spec:
@@ -55,3 +55,20 @@ spec:
               port: 5601
             initialDelaySeconds: 30
             periodSeconds: 10
+---
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: kibana-ingressroute
+  namespace: kube-system
+spec:
+  entryPoints:
+    - web  # HTTP 접속을 위한 entryPoint (HTTP일 경우)
+    # - websecure  # HTTPS 접속을 위한 entryPoint (HTTPS일 경우)
+  routes:
+    - match: Host(`kibana.example.com`)  # 접속할 도메인
+      kind: Rule
+      services:
+        - name: kibana-service  # Elasticsearch 서비스 이름
+          port: 9200  # Elasticsearch HTTP 포트
