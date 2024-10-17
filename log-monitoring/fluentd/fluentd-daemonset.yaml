@@ -57,6 +57,10 @@ data:
       @type elasticsearch
       host elasticsearch-service.kube-system.svc.cluster.local  # Elasticsearch 주소 (환경 변수 사용)
       port 9200
+      logstash_format true
+      include_tag_key true
+      tag_key @log_name
+      flush_interval 5s
       user steppod
       password steppod123
     </match>
