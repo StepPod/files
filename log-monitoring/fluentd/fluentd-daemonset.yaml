@@ -5,43 +5,142 @@ metadata:
   namespace: kube-system
 data:
   fluent.conf: |
-    # Kubernetes Pod 로그 수집
+    # do not collect fluentd logs to avoid infinite loops.
+    <label @FLUENT_LOG>
+      <match **>
+       @type null
+       @id ignore_fluent_logs
+      </match>
+    </label>    
+    @include /fluentd/etc/01_sources.conf
+    @include /fluentd/etc/02_filters.conf
+    @include /fluentd/etc/03_dispatch.conf
+    @include /fluentd/etc/04_outputs.conf
+
+  01_sources.conf: |-
+    ## logs from podman
     <source>
       @type tail
-      path /var/log/pods/**/*.log  # Kubernetes Pod 로그 경로
-      pos_file /var/log/fluentd-pods.log.pos
-      tag kubernetes.pod
-      format json
+      @id in_tail_container_logs
+      @label @KUBERNETES
+      path /var/log/containers/*.log
+      pos_file /var/log/fluentd-containers.log.pos
+      tag kubernetes.*
+      read_from_head true
+      <parse>
+        @type multi_format
+        <pattern>
+          format json
+          time_key time
+          time_type string
+          time_format "%Y-%m-%dT%H:%M:%S.%NZ"
+          keep_time_key false
+        </pattern>
+        <pattern>
+          format regexp
+          expression /^(?<time>.+) (?<stream>stdout|stderr)( (.))? (?<log>.*)$/
+          time_format '%Y-%m-%dT%H:%M:%S.%NZ'
+          keep_time_key false
+        </pattern>
+      </parse>
+      emit_unmatched_lines true
     </source>
-    
-    # 시스템 로그 수집 (dmesg, journal)
+
+    # expose metrics in prometheus format
     <source>
-      @type systemd
-      filters [{ "_SYSTEMD_UNIT": "dmesg.service" }, { "_SYSTEMD_UNIT": "systemd-journald.service" }]
-      tag system.logs
-      path /run/log/journal
+      @type prometheus
+      bind 0.0.0.0
+      port 24231
+      metrics_path /metrics
     </source>
+
+  02_filters.conf: |-
+    <label @KUBERNETES>
+      <match kubernetes.var.log.containers.fluentd**>
+        @type relabel
+        @label @FLUENT_LOG
+      </match>
+
+      # <match kubernetes.var.log.containers.**_kube-system_**>
+      #   @type null
+      #   @id ignore_kube_system_logs
+      # </match>
+
+      <filter kubernetes.**>
+        @type kubernetes_metadata
+        @id filter_kube_metadata
+        skip_labels false
+        skip_container_metadata false
+        skip_namespace_metadata true
+        skip_master_url true
+      </filter>
+
+      <match **>
+        @type relabel
+        @label @DISPATCH
+      </match>
+    </label>
+
+  03_dispatch.conf: |-
+    <label @DISPATCH>
+      <filter **>
+        @type prometheus
+        <metric>
+          name fluentd_input_status_num_records_total
+          type counter
+          desc The total number of incoming records
+          <labels>
+            tag ${tag}
+            hostname ${hostname}
+          </labels>
+        </metric>
+      </filter>
+
+      <match **>
+        @type relabel
+        @label @OUTPUT
+      </match>
+    </label>
+
+  04_outputs.conf: |-
+    <label @OUTPUT>
+      <match **>
+        @type elasticsearch
+        host elasticsearch-service.kube-system.svc.cluster.local  # Elasticsearch 주소 (환경 변수 사용)
+        port 9200
+        path ""
+        user steppod
+        password steppod123
+        # Don't wait for elastic to start up.
+        verify_es_version_at_startup false
+      </match>
+    </label>
+    # Kubernetes Pod 로그 수집
+    #<source>
+    #  @type tail
+    #  path /var/log/pods/**/*.log  # Kubernetes Pod 로그 경로
+    #  pos_file /var/log/fluentd-pods.log.pos
+    #  tag kubernetes.pod
+    #  format json
+    #  encoding utf-8
+    #</source>
+    # 시스템 로그 수집 (dmesg, journal)
+    #<source>
+    #  @type systemd
+    #  matches [{ "_SYSTEMD_UNIT": "dmesg.service" }, { "_SYSTEMD_UNIT": "systemd-journald.service" }]
+    #  tag system.logs
+    #  path /run/log/journal
+    #</source>
 
     # steppod 서비스 로그 수집 
-    <source>
-      @type tail
-      path /var/log/steppod.log  # steppod 서비스 로그 경로
-      pos_file /var/log/fluentd-service.log.pos
-      tag steppod.logs
-      format none
-    </source>
+    #<source>
+    #  @type tail
+    #  path /var/log/steppod.log  # steppod 서비스 로그 경로
+    #  pos_file /var/log/fluentd-service.log.pos
+    #  tag steppod.logs
+    #  format none
+    #</source>
 
-    # Elasticsearch로 로그 전송
-    <match **>
-      @type elasticsearch
-      host ${FLUENT_ELASTICSEARCH_HOST}  # Elasticsearch 주소 (환경 변수 사용)
-      port ${FLUENT_ELASTICSEARCH_PORT}
-      logstash_format true
-      logstash_prefix fluentd
-      logstash_dateformat %Y.%m.%d
-      include_tag_key true
-      type_name _doc
-    </match>
 ---
 apiVersion: apps/v1
 kind: DaemonSet
@@ -78,7 +177,7 @@ spec:
                 fieldRef:
                   fieldPath: spec.nodeName
             - name: FLUENT_ELASTICSEARCH_HOST  # Elasticsearch 호스트 설정
-              value: "elasticsearch-service"
+              value: "elasticsearch-0.elasticsearch-service.kube-system.svc.cluster.local"
             - name: FLUENT_ELASTICSEARCH_PORT  # Elasticsearch 포트 설정
               value: "9200"
             - name: FLUENT_ELASTICSEARCH_SCHEME
@@ -120,10 +219,25 @@ spec:
             - name: config-volume
               mountPath: /fluentd/etc/fluent.conf  # Fluentd 설정 파일 마운트
               subPath: fluent.conf
+            - name: config-volume
+              mountPath: /fluentd/etc/01_sources.conf
+              subPath: 01_sources.conf
+            - name: config-volume
+              mountPath: /fluentd/etc/02_filters.conf
+              subPath: 02_filters.conf
+            - name: config-volume
+              mountPath: /fluentd/etc/03_dispatch.conf
+              subPath: 03_dispatch.conf
+            - name: config-volume
+              mountPath: /fluentd/etc/04_outputs.conf
+              subPath: 04_outputs.conf
             - name: varlog
               mountPath: /var/log  # 시스템 로그 경로
             - name: varlibpods
               mountPath: /var/log/pods  # containerd Pod 로그 경로
+              readOnly: true
+            - name: varlibcontainers
+              mountPath: /var/log/containers  # container 로그 경로
               readOnly: true
             - name: runlogjournal
               mountPath: /run/log/journal
@@ -139,6 +253,9 @@ spec:
         - name: varlibpods
           hostPath:
             path: /var/log/pods  # containerd Pod 로그 경로
+        - name: varlibcontainers
+          hostPath:
+            path: /var/log/containers  # containerd Pod 로그 경로
         - name: runlogjournal
           hostPath:
             path: /run/log/journal
