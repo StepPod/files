@@ -42,8 +42,8 @@ podSecurityContext: { }
 #   type: "spc_t"
 
 securityContext: { }
-  # capabilities:
-  #   drop:
+# capabilities:
+#   drop:
 #   - ALL
 # readOnlyRootFilesystem: true
 # runAsNonRoot: true
@@ -81,7 +81,7 @@ readinessProbe:
   # failureThreshold: 3
 
 resources: { }
-  # requests:
+# requests:
 #   cpu: 10m
 #   memory: 128Mi
 # limits:
@@ -96,9 +96,9 @@ autoscaling:
   # targetMemoryUtilizationPercentage: 80
   ## see https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale-walkthrough/#autoscaling-on-multiple-metrics-and-custom-metrics
   customRules: [ ]
-    # - type: Pods
-    #   pods:
-    #     metric:
+  # - type: Pods
+  #   pods:
+  #     metric:
   #       name: packets-per-second
   #     target:
   #       type: AverageValue
@@ -168,8 +168,8 @@ updateStrategy: { }
 
 ## Additional environment variables to set for fluentd pods
 env: [ ]
-  # - name: "FLUENTD_CONF"
-  #   value: "../../../etc/fluent/fluent.conf"
+# - name: "FLUENTD_CONF"
+#   value: "../../../etc/fluent/fluent.conf"
 # - name: FLUENT_ELASTICSEARCH_HOST
 #   value: "elasticsearch-master"
 # - name: FLUENT_ELASTICSEARCH_PORT
@@ -189,9 +189,15 @@ initContainers: [ ]
 mountVarLogDirectory: true
 mountDockerContainersDirectory: true
 
-volumes: [ ]
+volumes:
+  - name: steppod
+    hostPath:
+      path: /var/lib/steppod  # 각 노드에서 참조할 경로
+      type: DirectoryOrCreate  # 경로가 없으면 자동으로 디렉토리 생성
 
-volumeMounts: [ ]
+volumeMounts:
+  - name: steppod
+    mountPath: /mnt/steppod # 컨테이너 내에서 참조할 경로
 
 ## Only available if kind is StatefulSet
 ## Fluentd persistence
