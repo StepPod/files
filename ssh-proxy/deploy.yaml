@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ssh-proxy-deployment
+  namespace: ssh-proxy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ssh-proxy
+  template:
+    metadata:
+      labels:
+        app: ssh-proxy
+    spec:
+      containers:
+        - name: ssh-proxy-container
+          image: ubuntu:22.04
+          imagePullPolicy: IfNotPresent
+          command:
+            - bin/sh -c
+            - |
+              apt update && apt install -y openssh-server && /usr/sbin/sshd -D
+# echo -e "Host *.ssh.domain\n    ProxyCommand ssh -q ssh-proxy-service.ssh-proxy.svc.cluster.local -W %h.svc.cluster.local:22" >> /etc/ssh/ssh_config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ssh-proxy-service
+  namespace: ssh-proxy
+spec:
+  ports:
+    - port: 22
+      targetPort: 22
+      protocol: TCP
+  selector:
+    app: ssh-proxy
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRouteTCP
+metadata:
+  name: ssh-proxy-ingress
+  namespace: ssh-proxy
+spec:
+  entryPoints:
+    - ssh
+  routes:
+    - match: Host(`*`)
+      services:
+        - name: ssh-proxy-service
+          port: 22
+---
