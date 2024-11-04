@@ -12,6 +12,7 @@ data:
   init-script.sh: |
     #!/bin/sh
     apt update && apt install -y openssh-server
+    mkdir -p /run/sshd  # /run/sshd 디렉터리 생성
     SSH_CONFIG="/etc/ssh/sshd_config"
 
     sed -i 's/^#PermitRootLogin.*/PermitRootLogin yes/' "$SSH_CONFIG" || true
