@@ -46,9 +46,7 @@ spec:
           command:
             - /bin/sh
             - -c
-          args:
-            - |
-              chmod +x /scripts/init-script.sh && /scripts/init-script.sh
+            - "/bin/sh /scripts/init-script.sh"
           volumeMounts:
             - name: script-volume
               mountPath: /scripts
