@@ -717,16 +717,16 @@ ports:
     # If you want to access it from outside your cluster,
     # use `kubectl port-forward` or create a secure ingress
     expose:
-      default: false
+      default: true
     # -- The exposed port for this service
     exposedPort: 9100
     # -- The port protocol (TCP/UDP)
     protocol: TCP
   ssh:
-    port: 22
+    port: 2022
     expose:
-      default: false
-    exposedPort: 22
+      default: true
+    exposedPort: 2022
     protocol: TCP
 
 # -- TLS Options are created as [TLSOption CRDs](https://doc.traefik.io/traefik/https/tls/#tls-options)
