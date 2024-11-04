@@ -150,6 +150,9 @@ gateway:
       protocol: HTTP
       # -- Routes are restricted to namespace of the gateway [by default](https://gateway-api.sigs.k8s.io/reference/spec/#gateway.networking.k8s.io/v1.FromNamespaces
       namespacePolicy:  # @schema type:[string, null]
+    ssh:
+      port: 2222
+      protocol: TCP
     # websecure listener is disabled by default because certificateRefs needs to be added,
     # or you may specify TLS protocol with Passthrough mode and add "--providers.kubernetesGateway.experimentalChannel=true" in additionalArguments section.
     # websecure:
@@ -575,7 +578,8 @@ globalArguments:
 # -- Additional arguments to be passed at Traefik's binary
 # See [CLI Reference](https://docs.traefik.io/reference/static-configuration/cli/)
 # Use curly braces to pass values: `helm install --set="additionalArguments={--providers.kubernetesingress.ingressclass=traefik-internal,--log.level=DEBUG}"`
-additionalArguments: [ ]
+additionalArguments:
+  - "--entryPoints.ssh.address=:2222"
 #  - "--providers.kubernetesingress.ingressclass=traefik-internal"
 #  - "--log.level=DEBUG"
 
