@@ -77,7 +77,7 @@ spec:
   entryPoints:
     - ssh
   routes:
-    - match: Host(`*`)
+    - match: HostSNI(`*`)
       services:
         - name: ssh-proxy-service
           port: 22
