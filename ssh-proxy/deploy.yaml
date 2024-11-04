@@ -23,7 +23,9 @@ spec:
           image: ubuntu:22.04
           imagePullPolicy: IfNotPresent
           command:
-            - bin/sh -c
+            - /bin/sh
+            - -c
+          args:
             - |
               apt update && apt install -y openssh-server && /usr/sbin/sshd -D
 # echo -e "Host *.ssh.domain\n    ProxyCommand ssh -q ssh-proxy-service.ssh-proxy.svc.cluster.local -W %h.svc.cluster.local:22" >> /etc/ssh/ssh_config
