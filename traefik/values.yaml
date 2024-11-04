@@ -723,7 +723,7 @@ ports:
     # -- The port protocol (TCP/UDP)
     protocol: TCP
   ssh:
-    port: 2222
+    port: 22
     expose:
       default: true
     exposedPort: 2222
