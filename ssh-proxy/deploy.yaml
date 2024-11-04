@@ -3,6 +3,27 @@ kind: Namespace
 metadata:
   name: ssh-proxy
 ---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: init-script
+  namespace: ssh-proxy
+data:
+  init-script.sh: |
+    #!/bin/sh
+    apt update && apt install -y openssh-server
+    SSH_CONFIG="/etc/ssh/sshd_config"
+
+    sed -i 's/^#PermitRootLogin.*/PermitRootLogin yes/' "$SSH_CONFIG" || true
+    sed -i 's/^PermitRootLogin.*/PermitRootLogin yes/' "$SSH_CONFIG" || true
+    sed -i 's/^#PasswordAuthentication.*/PasswordAuthentication yes/' "$SSH_CONFIG" || true
+    sed -i 's/^PasswordAuthentication.*/PasswordAuthentication yes/' "$SSH_CONFIG" || true
+    
+    service ssh restart
+    
+    echo "root:son0507!" | chpasswd
+    /usr/sbin/sshd -D
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -27,7 +48,14 @@ spec:
             - -c
           args:
             - |
-              apt update && apt install -y openssh-server && /usr/sbin/sshd -D
+              /scripts/init-script.sh
+          volumeMounts:
+            - name: script-volume
+              mountPath: /scripts
+      volumes:
+        - name: script-volume
+          configMap:
+            name: init-script
 # echo -e "Host *.ssh.domain\n    ProxyCommand ssh -q ssh-proxy-service.ssh-proxy.svc.cluster.local -W %h.svc.cluster.local:22" >> /etc/ssh/ssh_config
 ---
 apiVersion: v1
