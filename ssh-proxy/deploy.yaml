@@ -22,7 +22,11 @@ data:
     
     # echo "root:son0507!" | chpasswd    
     echo -e "Host *.ssh.domain\n    ProxyCommand ssh -q ssh-proxy-service.ssh-proxy.svc.cluster.local -W %h.svc.cluster.local:22" >> /etc/ssh/ssh_config
-    /usr/sbin/sshd -D
+    # 로그를 저장할 파일 경로 설정
+    LOG_FILE="/var/log/sshd_proxy.log"
+    
+    # SSH 서버 시작 및 로그 리디렉션
+    /usr/sbin/sshd -D >> "$LOG_FILE" 2>&1
 ---
 apiVersion: apps/v1
 kind: Deployment
