@@ -13,14 +13,15 @@ data:
     #!/bin/sh
     apt update && apt install -y openssh-server
     mkdir -p /run/sshd  # /run/sshd 디렉터리 생성
-    SSH_CONFIG="/etc/ssh/sshd_config"
+    #SSH_CONFIG="/etc/ssh/sshd_config"
 
-    sed -i 's/^#PermitRootLogin.*/PermitRootLogin yes/' "$SSH_CONFIG" || true
-    sed -i 's/^PermitRootLogin.*/PermitRootLogin yes/' "$SSH_CONFIG" || true
-    sed -i 's/^#PasswordAuthentication.*/PasswordAuthentication yes/' "$SSH_CONFIG" || true
-    sed -i 's/^PasswordAuthentication.*/PasswordAuthentication yes/' "$SSH_CONFIG" || true
+    #sed -i 's/^#PermitRootLogin.*/PermitRootLogin yes/' "$SSH_CONFIG" || true
+    #sed -i 's/^PermitRootLogin.*/PermitRootLogin yes/' "$SSH_CONFIG" || true
+    #sed -i 's/^#PasswordAuthentication.*/PasswordAuthentication yes/' "$SSH_CONFIG" || true
+    #sed -i 's/^PasswordAuthentication.*/PasswordAuthentication yes/' "$SSH_CONFIG" || true
     
-    echo "root:son0507!" | chpasswd    
+    # echo "root:son0507!" | chpasswd    
+    echo -e "Host *.ssh.domain\n    ProxyCommand ssh -q ssh-proxy-service.ssh-proxy.svc.cluster.local -W %h.svc.cluster.local:22" >> /etc/ssh/ssh_config
     /usr/sbin/sshd -D
 ---
 apiVersion: apps/v1
@@ -53,7 +54,6 @@ spec:
         - name: script-volume
           configMap:
             name: init-script
-# echo -e "Host *.ssh.domain\n    ProxyCommand ssh -q ssh-proxy-service.ssh-proxy.svc.cluster.local -W %h.svc.cluster.local:22" >> /etc/ssh/ssh_config
 ---
 apiVersion: v1
 kind: Service
