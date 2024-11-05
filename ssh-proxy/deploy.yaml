@@ -21,7 +21,7 @@ data:
     #sed -i 's/^PasswordAuthentication.*/PasswordAuthentication yes/' "$SSH_CONFIG" || true
     
     # echo "root:son0507!" | chpasswd    
-    echo -e "Host *.ssh.domain\n    ProxyCommand ssh -q ssh-proxy-service.ssh-proxy.svc.cluster.local -W %h.svc.cluster.local:22" >> /etc/ssh/ssh_config
+    echo "Host *.ssh.domain\n    ProxyCommand ssh -q ssh-proxy-service.ssh-proxy.svc.cluster.local -W \$(echo %h | sed 's/\\.ssh\\.domain\$//').svc.cluster.local:22" >> /etc/ssh/ssh_config
     # 로그를 저장할 파일 경로 설정
     LOG_FILE="/var/log/sshd_proxy.log"
     
