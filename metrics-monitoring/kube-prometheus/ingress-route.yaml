@@ -1,7 +1,7 @@
 apiVersion: traefik.io/v1alpha1
 kind: Middleware
 metadata:
-  name: grafana-auth
+  name: prometheus-auth
   namespace: monitoring
 spec:
   basicAuth: # htpasswd -nb admin testpassword
@@ -11,16 +11,16 @@ spec:
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
-  name: grafana
+  name: prometheus
   namespace: monitoring
 spec:
   entryPoints:
     - web
   routes:
-    - match: Host(`grafana.example.com`)
+    - match: Host(`prometheus.example.com`)
       kind: Rule
       services:
-        - name: grafana
-          port: 3000
+        - name: prometheus-kube-prometheus-prometheus
+          port: 9090
       #middlewares:
-      #  - name: grafana-auth
+      #  - name: prometheus-auth
