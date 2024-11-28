@@ -22,5 +22,5 @@ spec:
       services:
         - name: prometheus-k8s
           port: 9090
-      middlewares:
-        - name: prometheus-auth
+      #middlewares:
+      #  - name: prometheus-auth

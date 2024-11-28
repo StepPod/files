@@ -22,5 +22,5 @@ spec:
       services:
         - name: grafana
           port: 3000
-      middlewares:
-        - name: grafana-auth
+      #middlewares:
+      #  - name: grafana-auth
