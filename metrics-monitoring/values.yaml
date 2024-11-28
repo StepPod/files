@@ -258,10 +258,7 @@ serviceMonitor:
   scheme: http
   tlsConfig: {}
   scrapeTimeout: 30s
-  relabelings:
-    - sourceLabels: [ __meta_kubernetes_pod_node_name ]
-      targetLabel: instance
-      action: replace
+  relabelings: []
   metricRelabelings: []
   targetLabels: []
 
@@ -1314,7 +1311,10 @@ imageRenderer:
     scheme: http
     tlsConfig: {}
     scrapeTimeout: 30s
-    relabelings: []
+    relabelings:
+      - sourceLabels: [ __meta_kubernetes_pod_node_name ]
+        targetLabel: instance
+        action: replace
     # See: https://doc.crds.dev/github.com/prometheus-operator/kube-prometheus/monitoring.coreos.com/ServiceMonitor/v1@v0.11.0#spec-targetLabels
     targetLabels: []
       # - targetLabel1
