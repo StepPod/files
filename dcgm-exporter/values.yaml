@@ -117,10 +117,7 @@ serviceMonitor:
     release: prometheus
   relabelings:
     - sourceLabels: [__meta_kubernetes_pod_node_name]
-      separator: ;
-      regex: ^(.*)$
-      targetLabel: nodename
-      replacement: $1
+      targetLabel: instance
       action: replace
 
 nodeSelector: {}
