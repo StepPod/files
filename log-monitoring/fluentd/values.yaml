@@ -376,6 +376,14 @@ fileConfigs:
         skip_namespace_metadata true
         skip_master_url true
       </filter>
+    
+      # 문자열 타입의 kubernetes.labels.app 필드 제거
+      <filter kubernetes.**>
+        @type record_transformer
+        <record>
+          kubernetes.labels.app ${if record['kubernetes']['labels']['app'].is_a?(String) then nil else record['kubernetes']['labels']['app'] end}
+        </record>
+      </filter>
 
       <match **>
         @type relabel
