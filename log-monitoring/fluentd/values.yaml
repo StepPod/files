@@ -380,8 +380,10 @@ fileConfigs:
       # 문자열 타입의 kubernetes.labels.app 필드 제거
       <filter kubernetes.**>
         @type record_transformer
+        enable_ruby true
         <record>
-          kubernetes.labels.app ${if record['kubernetes']['labels']['app'].is_a?(String) then nil else record['kubernetes']['labels']['app'] end}
+          # app 필드가 String이면 nil로 설정, 아니면 기존 값 유지
+          kubernetes.labels.app ${record['kubernetes']['labels']['app'].is_a?(String) ? nil : record['kubernetes']['labels']['app']}
         </record>
       </filter>
 
