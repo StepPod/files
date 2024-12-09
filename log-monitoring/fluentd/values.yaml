@@ -423,6 +423,7 @@ fileConfigs:
         password steppod123
         # Don't wait for elastic to start up.
         verify_es_version_at_startup false
+        log_es_400_reason true
       </match>
     </label>
 
