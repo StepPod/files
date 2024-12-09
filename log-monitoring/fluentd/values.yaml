@@ -377,14 +377,10 @@ fileConfigs:
         skip_master_url true
       </filter>
     
-      # 문자열 타입의 kubernetes.labels.app 필드 제거
+      # kubernetes.labels.app 필드 제거
       <filter kubernetes.**>
         @type record_transformer
-        enable_ruby true
-        <record>
-          # app 필드가 String이면 nil로 설정, 아니면 기존 값 유지
-          kubernetes.labels.app ${record['kubernetes']['labels']['app'].is_a?(String) ? nil : record['kubernetes']['labels']['app']}
-        </record>
+        remove_keys kubernetes.labels.app
       </filter>
 
       <match **>
